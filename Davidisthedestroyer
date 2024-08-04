@@ -1,0 +1,56 @@
+import ccxt
+import time
+
+# Configuration
+api_key = 'YOUR_API_KEY'
+api_secret = 'YOUR_API_SECRET'
+exchange_id = 'binance'  # Change to your chosen exchange
+symbol = 'BTC/USDT'  # Trading pair
+stake = 0.01  # Example stake amount in BTC
+interval = 60  # Time interval between checks in seconds
+
+# Initialize the exchange
+exchange_class = getattr(ccxt, exchange_id)
+exchange = exchange_class({
+    'apiKey': api_key,
+    'secret': api_secret,
+})
+
+def get_balance():
+    balance = exchange.fetch_balance()
+    return balance['total']['USDT']  # Adjust according to the currency you're using
+
+def place_order(amount, price, side='buy'):
+    order = exchange.create_limit_order(symbol, side, amount, price)
+    return order
+
+def main():
+    last_order = None
+    while True:
+        try:
+            balance = get_balance()
+            print(f'Balance: {balance}')            # Fetch the current price
+            ticker = exchange.fetch_ticker(symbol)
+            current_price = ticker['last']
+
+            if last_order:
+                # Implement your recovery logic here
+                # Example: if previous order was a loss, place a new order with the same stake
+                # Adjust recovery logic according to your specific strategy
+
+                if last_order['side'] == 'buy':
+                    place_order(stake, current_price, 'sell')
+                else:
+                    place_order(stake, current_price, 'buy')
+            else:
+                # Place an initial order
+                place_order(stake, current_price)
+
+            last_order = {'side': 'buy' if last_order and last_order['side'] == 'sell' else 'sell'}  # Toggle order side
+            time.sleep(interval)
+        except Exception as e:
+            print(f'Error: {e}')
+            time.sleep(interval)
+
+if __name__ == "__main__":main()
+```
